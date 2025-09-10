@@ -181,9 +181,11 @@ Connect to Business Central: http://localhost:9081 to interact with the process.
 
 ![img.png](img/jbpm-sample.png)
 
+---
+
 #### Activiti (Community Edition)
 
-TODO
+![wip.png](img/wip.png)
 
 ---
 
@@ -193,7 +195,7 @@ Each engine exposes an API to send signals/messages. Below are sample `curl` com
 
 ### Camunda 8 (Zeebe)
 
-TODO
+![wip.png](img/wip.png)
 
 ### jBPM
 
@@ -208,6 +210,10 @@ Signal Message Await Manager OK:
 ```bash
 docker exec jbpm-bpm curl -u wbadmin:wbadmin -H "Content-Type: application/json" -X POST http://localhost:8080/kie-server/services/rest/server/containers/Complaint_1.0.0/signals/ManagerApproval -d '{"managerApprovalMessage": "Approved"}'
 ```
+
+### Activiti
+
+![wip.png](img/wip.png)
 
 ---
 
