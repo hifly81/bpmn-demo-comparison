@@ -1,0 +1,8 @@
+services:
+  jbpm:
+    hostname: jbpm-bpm
+    container_name: jbpm-bpm
+    image: jboss/jbpm-server-full:7.61.0.Final
+    ports:
+      - 9081:8080
+      - 0001:8001

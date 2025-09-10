@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" targetNamespace="http://bpmn.io/schema/bpmn">
+   <message id="Message_0s9w13m" name="TechnicalFixComplete">
+      <extensionElements>
+         <zeebe:subscription correlationKey="= investigationIssueMessage" />
+      </extensionElements>
+   </message>
+   <message id="Message_0q7x4p2" name="ManagerApproval">
+      <extensionElements>
+         <zeebe:subscription correlationKey="= managerApprovalMessage" />
+      </extensionElements>
+   </message>
+   <collaboration id="ComplaintCollaboration">
+      <participant id="ComplaintHandler" name="Customer Service" processRef="ComplaintProcess" />
+      <participant id="TechnicalTeam" name="Technical Support" />
+      <participant id="Manager" name="Management" />
+   </collaboration>
+   <process id="ComplaintProcess" isExecutable="true">
+      <laneSet id="LaneSet_1y1l8q3">
+         <lane id="Lane_1" name="Customer Service">
+            <flowNodeRef>StartEvent_1</flowNodeRef>
+            <flowNodeRef>Task_ReceiveComplaint</flowNodeRef>
+            <flowNodeRef>Gateway_ComplaintType</flowNodeRef>
+            <flowNodeRef>Task_NotifyCustomer</flowNodeRef>
+            <flowNodeRef>Task_ProcessRefund</flowNodeRef>
+            <flowNodeRef>EndEvent_1</flowNodeRef>
+            <flowNodeRef>Gateway_StartParallel</flowNodeRef>
+            <flowNodeRef>Gateway_JoinParallel</flowNodeRef>
+            <flowNodeRef>SubProcess_TechnicalIssue</flowNodeRef>
+            <flowNodeRef>Gateway_JoinPaths</flowNodeRef>
+            <flowNodeRef>Task_InitialReview</flowNodeRef>
+         </lane>
+         <lane id="Lane_2" name="Technical Support">
+            <flowNodeRef>Task_InvestigateIssue</flowNodeRef>
+            <flowNodeRef>Event_TechnicalFix</flowNodeRef>
+            <flowNodeRef>Task_FixIssue</flowNodeRef>
+         </lane>
+         <lane id="Lane_3" name="Management">
+            <flowNodeRef>Task_MultipleApprovals</flowNodeRef>
+            <flowNodeRef>Event_ManagerApproval</flowNodeRef>
+         </lane>
+      </laneSet>
+      <startEvent id="StartEvent_1" name="Complaint Received">
+         <outgoing>Flow_0y1l8q3</outgoing>
+      </startEvent>
+      <task id="Task_ReceiveComplaint" name="Receive Complaint">
+         <incoming>Flow_0y1l8q3</incoming>
+         <outgoing>Flow_0t4h6y1</outgoing>
+      </task>
+      <sequenceFlow id="Flow_0y1l8q3" sourceRef="StartEvent_1" targetRef="Task_ReceiveComplaint" />
+      <exclusiveGateway id="Gateway_ComplaintType" name="Is technical?">
+         <incoming>Flow_0t4h6y1</incoming>
+         <outgoing>Flow_0e5r2p9</outgoing>
+         <outgoing>Flow_0u1l9k4</outgoing>
+      </exclusiveGateway>
+      <sequenceFlow id="Flow_0t4h6y1" sourceRef="Task_ReceiveComplaint" targetRef="Gateway_ComplaintType" />
+      <sequenceFlow id="Flow_0e5r2p9" name="Yes" sourceRef="Gateway_ComplaintType" targetRef="SubProcess_TechnicalIssue">
+         <conditionExpression xsi:type="tFormalExpression">=isTechnicalComplaint</conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="Flow_0u1l9k4" name="No" sourceRef="Gateway_ComplaintType" targetRef="Task_ProcessRefund">
+         <conditionExpression xsi:type="tFormalExpression">=not(isTechnicalComplaint)</conditionExpression>
+      </sequenceFlow>
+      <subProcess id="SubProcess_TechnicalIssue" name="Handle Technical Issue">
+         <incoming>Flow_0e5r2p9</incoming>
+         <outgoing>Flow_0i8k7c4</outgoing>
+         <startEvent id="SubStart_1">
+            <outgoing>Flow_0a8h5f3</outgoing>
+         </startEvent>
+         <task id="Task_InvestigateIssue" name="Investigate Issue">
+            <incoming>Flow_0a8h5f3</incoming>
+            <outgoing>Flow_0s9w13m</outgoing>
+         </task>
+         <sequenceFlow id="Flow_0a8h5f3" sourceRef="SubStart_1" targetRef="Task_InvestigateIssue" />
+         <intermediateCatchEvent id="Event_TechnicalFix" name="Await Fix">
+            <incoming>Flow_0s9w13m</incoming>
+            <outgoing>Flow_0g3h1r6</outgoing>
+            <messageEventDefinition messageRef="Message_0s9w13m" />
+         </intermediateCatchEvent>
+         <sequenceFlow id="Flow_0s9w13m" sourceRef="Task_InvestigateIssue" targetRef="Event_TechnicalFix" />
+         <task id="Task_FixIssue" name="Fix Issue">
+            <incoming>Flow_0g3h1r6</incoming>
+            <outgoing>Flow_0j7e3m2</outgoing>
+         </task>
+         <sequenceFlow id="Flow_0g3h1r6" sourceRef="Event_TechnicalFix" targetRef="Task_FixIssue" />
+         <endEvent id="SubEnd_1">
+            <incoming>Flow_0j7e3m2</incoming>
+         </endEvent>
+         <sequenceFlow id="Flow_0j7e3m2" sourceRef="Task_FixIssue" targetRef="SubEnd_1" />
+      </subProcess>
+      <task id="Task_ProcessRefund" name="Process Refund">
+         <incoming>Flow_0u1l9k4</incoming>
+         <outgoing>Flow_0p6j8o1</outgoing>
+      </task>
+      <exclusiveGateway id="Gateway_JoinPaths">
+         <incoming>Flow_0i8k7c4</incoming>
+         <incoming>Flow_0p6j8o1</incoming>
+         <outgoing>Flow_0q1b9c2</outgoing>
+      </exclusiveGateway>
+      <sequenceFlow id="Flow_0i8k7c4" sourceRef="SubProcess_TechnicalIssue" targetRef="Gateway_JoinPaths" />
+      <sequenceFlow id="Flow_0p6j8o1" sourceRef="Task_ProcessRefund" targetRef="Gateway_JoinPaths" />
+      <parallelGateway id="Gateway_StartParallel">
+         <incoming>Flow_0q1b9c2</incoming>
+         <outgoing>Flow_0a9n8f4</outgoing>
+         <outgoing>Flow_0c7s4u1</outgoing>
+         <outgoing>Flow_0r3w9e8</outgoing>
+      </parallelGateway>
+      <sequenceFlow id="Flow_0q1b9c2" sourceRef="Gateway_JoinPaths" targetRef="Gateway_StartParallel" />
+      <task id="Task_NotifyCustomer" name="Notify Customer">
+         <incoming>Flow_0a9n8f4</incoming>
+         <outgoing>Flow_0v2l8p3</outgoing>
+      </task>
+      <endEvent id="EndEvent_1" name="Complaint Closed">
+         <incoming>Flow_0v2l8p3</incoming>
+      </endEvent>
+      <task id="Task_MultipleApprovals" name="Manager Approvals">
+         <incoming>Flow_0c7s4u1</incoming>
+         <outgoing>Flow_0t4y6i2</outgoing>
+      </task>
+      <intermediateCatchEvent id="Event_ManagerApproval" name="Await Manager OK">
+         <incoming>Flow_0t4y6i2</incoming>
+         <outgoing>Flow_0k5z8x7</outgoing>
+         <messageEventDefinition messageRef="Message_0q7x4p2" />
+      </intermediateCatchEvent>
+      <parallelGateway id="Gateway_JoinParallel">
+         <incoming>Flow_0k5z8x7</incoming>
+         <incoming>Flow_0t6h7u2</incoming>
+         <incoming>Flow_0v2l8p3</incoming>
+         <outgoing>Flow_0x4m1n5</outgoing>
+      </parallelGateway>
+      <task id="Task_InitialReview" name="Initial Review">
+         <incoming>Flow_0r3w9e8</incoming>
+         <outgoing>Flow_0t6h7u2</outgoing>
+      </task>
+      <sequenceFlow id="Flow_0a9n8f4" sourceRef="Gateway_StartParallel" targetRef="Task_NotifyCustomer" />
+      <sequenceFlow id="Flow_0c7s4u1" sourceRef="Gateway_StartParallel" targetRef="Task_MultipleApprovals" />
+      <sequenceFlow id="Flow_0t4y6i2" sourceRef="Task_MultipleApprovals" targetRef="Event_ManagerApproval" />
+      <sequenceFlow id="Flow_0k5z8x7" sourceRef="Event_ManagerApproval" targetRef="Gateway_JoinParallel" />
+      <sequenceFlow id="Flow_0r3w9e8" sourceRef="Gateway_StartParallel" targetRef="Task_InitialReview" />
+      <sequenceFlow id="Flow_0v2l8p3" sourceRef="Task_NotifyCustomer" targetRef="Gateway_JoinParallel" />
+      <sequenceFlow id="Flow_0t6h7u2" sourceRef="Task_InitialReview" targetRef="Gateway_JoinParallel" />
+      <sequenceFlow id="Flow_0x4m1n5" sourceRef="Gateway_JoinParallel" targetRef="EndEvent_1" />
+   </process>
+   <bpmndi:BPMNDiagram id="BPMNDiagram_ComplaintProcess">
+      <bpmndi:BPMNPlane id="BPMNPlane_ComplaintProcess" bpmnElement="ComplaintProcess">
+         <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+            <dc:Bounds x="100" y="200" width="36" height="36" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_ReceiveComplaint_di" bpmnElement="Task_ReceiveComplaint">
+            <dc:Bounds x="180" y="200" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Gateway_ComplaintType_di" bpmnElement="Gateway_ComplaintType">
+            <dc:Bounds x="320" y="215" width="50" height="50" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_ProcessRefund_di" bpmnElement="Task_ProcessRefund">
+            <dc:Bounds x="430" y="120" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="SubProcess_TechnicalIssue_di" bpmnElement="SubProcess_TechnicalIssue">
+            <dc:Bounds x="430" y="250" width="220" height="180" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Gateway_JoinPaths_di" bpmnElement="Gateway_JoinPaths">
+            <dc:Bounds x="680" y="210" width="50" height="50" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Gateway_StartParallel_di" bpmnElement="Gateway_StartParallel">
+            <dc:Bounds x="800" y="210" width="50" height="50" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_NotifyCustomer_di" bpmnElement="Task_NotifyCustomer">
+            <dc:Bounds x="900" y="120" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_MultipleApprovals_di" bpmnElement="Task_MultipleApprovals">
+            <dc:Bounds x="900" y="220" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_InitialReview_di" bpmnElement="Task_InitialReview">
+            <dc:Bounds x="900" y="320" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Event_ManagerApproval_di" bpmnElement="Event_ManagerApproval">
+            <dc:Bounds x="1050" y="220" width="36" height="36" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Gateway_JoinParallel_di" bpmnElement="Gateway_JoinParallel">
+            <dc:Bounds x="1200" y="210" width="50" height="50" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+            <dc:Bounds x="1350" y="210" width="36" height="36" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="SubStart_1_di" bpmnElement="SubStart_1">
+            <dc:Bounds x="460" y="290" width="36" height="36" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_InvestigateIssue_di" bpmnElement="Task_InvestigateIssue">
+            <dc:Bounds x="530" y="290" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Event_TechnicalFix_di" bpmnElement="Event_TechnicalFix">
+            <dc:Bounds x="670" y="290" width="36" height="36" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="Task_FixIssue_di" bpmnElement="Task_FixIssue">
+            <dc:Bounds x="750" y="290" width="100" height="80" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape id="SubEnd_1_di" bpmnElement="SubEnd_1">
+            <dc:Bounds x="880" y="290" width="36" height="36" />
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNEdge id="Flow_0y1l8q3_di" bpmnElement="Flow_0y1l8q3">
+            <di:waypoint x="136" y="218" />
+            <di:waypoint x="180" y="240" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0t4h6y1_di" bpmnElement="Flow_0t4h6y1">
+            <di:waypoint x="280" y="240" />
+            <di:waypoint x="320" y="240" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0e5r2p9_di" bpmnElement="Flow_0e5r2p9">
+            <di:waypoint x="345" y="215" />
+            <di:waypoint x="450" y="280" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0u1l9k4_di" bpmnElement="Flow_0u1l9k4">
+            <di:waypoint x="345" y="215" />
+            <di:waypoint x="430" y="160" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0a8h5f3_di" bpmnElement="Flow_0a8h5f3">
+            <di:waypoint x="496" y="308" />
+            <di:waypoint x="530" y="330" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0s9w13m_di" bpmnElement="Flow_0s9w13m">
+            <di:waypoint x="630" y="330" />
+            <di:waypoint x="670" y="308" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0g3h1r6_di" bpmnElement="Flow_0g3h1r6">
+            <di:waypoint x="706" y="308" />
+            <di:waypoint x="750" y="330" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0j7e3m2_di" bpmnElement="Flow_0j7e3m2">
+            <di:waypoint x="850" y="330" />
+            <di:waypoint x="880" y="308" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0i8k7c4_di" bpmnElement="Flow_0i8k7c4">
+            <di:waypoint x="650" y="250" />
+            <di:waypoint x="705" y="235" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0p6j8o1_di" bpmnElement="Flow_0p6j8o1">
+            <di:waypoint x="530" y="160" />
+            <di:waypoint x="705" y="235" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0q1b9c2_di" bpmnElement="Flow_0q1b9c2">
+            <di:waypoint x="730" y="235" />
+            <di:waypoint x="825" y="235" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0a9n8f4_di" bpmnElement="Flow_0a9n8f4">
+            <di:waypoint x="825" y="235" />
+            <di:waypoint x="900" y="160" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0c7s4u1_di" bpmnElement="Flow_0c7s4u1">
+            <di:waypoint x="825" y="235" />
+            <di:waypoint x="900" y="260" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0r3w9e8_di" bpmnElement="Flow_0r3w9e8">
+            <di:waypoint x="825" y="235" />
+            <di:waypoint x="900" y="360" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0v2l8p3_di" bpmnElement="Flow_0v2l8p3">
+            <di:waypoint x="1000" y="160" />
+            <di:waypoint x="1225" y="235" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0t4y6i2_di" bpmnElement="Flow_0t4y6i2">
+            <di:waypoint x="1000" y="260" />
+            <di:waypoint x="1050" y="238" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0k5z8x7_di" bpmnElement="Flow_0k5z8x7">
+            <di:waypoint x="1086" y="238" />
+            <di:waypoint x="1225" y="235" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0t6h7u2_di" bpmnElement="Flow_0t6h7u2">
+            <di:waypoint x="1000" y="360" />
+            <di:waypoint x="1225" y="235" />
+         </bpmndi:BPMNEdge>
+         <bpmndi:BPMNEdge id="Flow_0x4m1n5_di" bpmnElement="Flow_0x4m1n5">
+            <di:waypoint x="1250" y="235" />
+            <di:waypoint x="1350" y="228" />
+         </bpmndi:BPMNEdge>
+      </bpmndi:BPMNPlane>
+   </bpmndi:BPMNDiagram>
+</definitions>

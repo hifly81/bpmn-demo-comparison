@@ -1,0 +1,20 @@
+# Compiled class files and artifacts
+/target/
+/bin/
+
+# IDE-specific files
+.idea/
+.vscode/
+.classpath
+.project
+.settings/
+
+# Log files
+*.log
+logs/
+
+# Miscellaneous
+*.jar
+*.zip
+*.class
+.DS_Store
