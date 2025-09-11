@@ -95,8 +95,7 @@ This BPMN process models the handling of customer complaints. It coordinates act
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/bpmn-demo-comparison.git
-cd bpmn-models
+git clone https://github.com/hifly81/bpmn-demo-comparison.git
 ```
 
 ### 2. Run the environments separately
@@ -136,7 +135,7 @@ docker run --rm --network camunda_camunda-platform \
   sitapati/zbctl \
   --insecure \
   --address zeebe:26500 \
-  create instance ComplaintProcess --variables '{"isTechnicalComplaint": true, "correlationKey": "11111", "eventTechId": "someTechId", "eventManagerId": "someManagerId"}'
+  create instance ComplaintProcess --variables '{"isTechnicalComplaint": true, "correlationKey": "11111", "investigationIssueMessage": "NA", "managerApprovalMessage": "NA"}'
 ```
 
 Connect to Operate: http://localhost:8081 to interact with the process.
@@ -195,11 +194,33 @@ Each engine exposes an API to send signals/messages. Below are sample `curl` com
 
 ### Camunda 8 (Zeebe)
 
-![wip.png](img/wip.png)
+Signal Technical Fix Complete:
+
+```bash
+docker run --rm --network camunda_camunda-platform \
+sitapati/zbctl \
+--insecure \
+--address zeebe:26500 \
+publish message TechnicalFixComplete \
+--correlationKey "11111" \
+--variables '{"investigationIssueMessage": "Investigation OK"}'
+```
+
+Signal Message Await Manager OK:
+
+```bash
+docker run --rm --network camunda_camunda-platform \
+sitapati/zbctl \
+--insecure \
+--address zeebe:26500 \
+publish message ManagerApproval \
+--correlationKey "11111" \
+--variables '{"managerApprovalMessage": "Approved"}'
+```
 
 ### jBPM
 
-Signal Message Await Fix:
+Signal Technical Fix Complete:
 
 ```bash
 docker exec jbpm-bpm curl -u wbadmin:wbadmin -H "Content-Type: application/json" -X POST http://localhost:8080/kie-server/services/rest/server/containers/Complaint_1.0.0/signals/TechnicalFixComplete -d '{"investigationIssueMessage": "Investigation OK"}'
